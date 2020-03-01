@@ -111,32 +111,18 @@ var pipelineQ3 = chain([fs.createReadStream('lipstick.json'), parser(), pick({
 }), pick({
   filter: 'listItems'
 }), streamValues()]);
-var byBrandName = pipelineQ3.on('end', function (data) {
-  //console.log(data.value.brandName)
-  var arr = data.value;
-  return R.groupWith(function (a, b) {
-    return R.equals(a.brandName, b.brandName);
-  }, arr);
+
+var toBrandName = function toBrandName(data) {
+  return data.brandName;
+};
+
+var toBrandKey = function toBrandKey(key) {
+  return String(key);
+};
+
+var byBrandName = pipelineQ3.on('data', function (data) {
+  var brandList = R.map(toBrandName)(data.value);
+  var brandCount = R.countBy(toBrandKey)(brandList);
+  fs.writeFileSync('third.json', JSON.stringify(brandCount));
+  console.log('Question 3 ... writing third.csv file ... Done ');
 });
-console.log(byBrandName);
-
-var countProducts = function countProducts(acc, _ref) {
-  var nid = _ref.nid;
-
-  if (nid) {
-    return acc++;
-  }
-};
-
-var toBrandName = function toBrandName(_ref2) {
-  var brandName = _ref2.brandName;
-  return brandName;
-};
-
-var reducerQ3 = function reducerQ3(a) {
-  return R.reduceBy(countProducts, 0, toBrandName, a);
-};
-
-var mapOver = R.lift(function (a) {
-  return reducerQ3(a);
-}); //mapOver(byBrandName)

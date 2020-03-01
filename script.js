@@ -104,26 +104,16 @@ const pipelineQ3 = chain([
   streamValues()
 ]);
 
-const byBrandName = pipelineQ3.on('end', data => {
-  //console.log(data.value.brandName)
-  let arr = data.value 
-  return R.groupWith((a, b) => R.equals(a.brandName, b.brandName), arr);
+const toBrandName = data => data.brandName 
+
+const toBrandKey = key => String(key) 
+
+const byBrandName = pipelineQ3.on('data', data => {
+  let brandList =  R.map(toBrandName)(data.value)
+  let brandCount = R.countBy(toBrandKey)(brandList)
+  fs.writeFileSync('third.json', JSON.stringify(brandCount));
+  console.log('Question 3 ... writing third.csv file ... Done ')
 })
 
-console.log(byBrandName)
-
-const countProducts = (acc, {nid}) => {
-  if (nid) {
-    return acc++
-  }
-}
-
-const toBrandName = ({brandName}) => brandName
-
-const reducerQ3 = a => R.reduceBy(countProducts, 0, toBrandName, a)
-
-const mapOver = R.lift(a => reducerQ3 (a))
-
-//mapOver(byBrandName)
 
 
