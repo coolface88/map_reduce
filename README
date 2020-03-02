@@ -1,0 +1,6 @@
+Step to run:
+1 - npm sofware installed
+2 - git clone https://github.com/coolface88/map_reduce.git
+3 - npm install
+4 - npm run build
+5 - npm run start

@@ -5,6 +5,7 @@ const {ignore} = require('stream-json/filters/Ignore');
 const {streamValues} = require('stream-json/streamers/StreamValues');
 const {reduce} = require('stream-chain/utils/Reduce');
 const fs   = require('fs');
+const path = require('path');
 
 //Question 1
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
@@ -112,8 +113,48 @@ const byBrandName = pipelineQ3.on('data', data => {
   let brandList =  R.map(toBrandName)(data.value)
   let brandCount = R.countBy(toBrandKey)(brandList)
   fs.writeFileSync('third.json', JSON.stringify(brandCount));
-  console.log('Question 3 ... writing third.csv file ... Done ')
+  console.log('Question 3 ... writing third.json file ... Done ')
 })
 
+//Question 4
 
+const csvWriterQ4 = createCsvWriter({
+    path: 'fourth.csv',
+    header: [
+        {id: 'image', title: 'image'},
+    ]   
+});
 
+const reducerQ4 = reduce((acc, data) => { 
+  let a = acc;
+  let b = a;
+  let flag = acc[0];
+  if (flag && data.name === 'stringValue') {
+    acc[1].push({image: data.value})
+    acc[0] = false
+  }
+  if (data.name === 'keyValue' && data.value === 'image') {
+    acc[0] = true
+  }
+  return b 
+}, [false,[]]);
+
+const pipelineQ4 = chain([
+  fs.createReadStream('lipstick.json'),
+  parser(), 
+  reducerQ4
+]);
+
+const extractFileName = ({image}) => {
+  return {image: path.basename(image)} 
+}
+
+reducerQ4.on('finish', () => {
+ let files = R.map(extractFileName)(reducerQ4.accumulator[1])
+ let uniq = R.uniq(files) 
+ csvWriterQ4.writeRecords(uniq)
+    .then(() => {
+        console.log('Question 4 ... writing fourth.csv file ... Done '); 
+    }); 
+
+});

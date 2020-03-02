@@ -18,7 +18,9 @@ var _require5 = require('stream-json/streamers/StreamValues'),
 var _require6 = require('stream-chain/utils/Reduce'),
     reduce = _require6.reduce;
 
-var fs = require('fs'); //Question 1
+var fs = require('fs');
+
+var path = require('path'); //Question 1
 
 
 var createCsvWriter = require('csv-writer').createObjectCsvWriter;
@@ -124,5 +126,47 @@ var byBrandName = pipelineQ3.on('data', function (data) {
   var brandList = R.map(toBrandName)(data.value);
   var brandCount = R.countBy(toBrandKey)(brandList);
   fs.writeFileSync('third.json', JSON.stringify(brandCount));
-  console.log('Question 3 ... writing third.csv file ... Done ');
+  console.log('Question 3 ... writing third.json file ... Done ');
+}); //Question 4
+
+var csvWriterQ4 = createCsvWriter({
+  path: 'fourth.csv',
+  header: [{
+    id: 'image',
+    title: 'image'
+  }]
+});
+var reducerQ4 = reduce(function (acc, data) {
+  var a = acc;
+  var b = a;
+  var flag = acc[0];
+
+  if (flag && data.name === 'stringValue') {
+    acc[1].push({
+      image: data.value
+    });
+    acc[0] = false;
+  }
+
+  if (data.name === 'keyValue' && data.value === 'image') {
+    acc[0] = true;
+  }
+
+  return b;
+}, [false, []]);
+var pipelineQ4 = chain([fs.createReadStream('lipstick.json'), parser(), reducerQ4]);
+
+var extractFileName = function extractFileName(_ref) {
+  var image = _ref.image;
+  return {
+    image: path.basename(image)
+  };
+};
+
+reducerQ4.on('finish', function () {
+  var files = R.map(extractFileName)(reducerQ4.accumulator[1]);
+  var uniq = R.uniq(files);
+  csvWriterQ4.writeRecords(uniq).then(function () {
+    console.log('Question 4 ... writing fourth.csv file ... Done ');
+  });
 });
